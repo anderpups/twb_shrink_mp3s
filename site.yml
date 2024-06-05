@@ -1,0 +1,26 @@
+- name: get file sizes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    percentage_of_files_to_check: 10
+  tasks:
+    - name: Set facts
+      ansible.builtin.set_fact:
+        twb_files: "{{ lookup('ansible.builtin.file','twb_files_by_size.json') }}"
+
+    - name: Set facts
+      ansible.builtin.set_fact:
+        twb_mp3_files: "{{ twb_files | selectattr('name', 'search', '.mp3') }}"
+    - name: Set facts
+      ansible.builtin.set_fact:
+        number_of_files_to_check: "{{ ((twb_mp3_files | length | float)*((percentage_of_files_to_check | float))*0.01) | int }}"
+    - debug:
+        msg: "{{ number_of_files_to_check }}"
+    - debug:
+        msg: |
+          Size of all {{ twb_mp3_files | length }} files:
+          {{ twb_mp3_files | map(attribute='size') | sum | human_readable }}
+
+          Size for the top {{ number_of_files_to_check }} files:
+          {{ (twb_mp3_files | sort(attribute='size') | reverse)[:(number_of_files_to_check) | int ] | map(attribute='size') | sum | human_readable }}
